@@ -2,8 +2,8 @@ package main
 
 import (
 	"bufio"
-	"fmt"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/veandco/go-sdl2/sdl"
@@ -15,13 +15,14 @@ const (
 	memSize        = 4096
 	stackDepth     = 16
 	programOffset  = 0x200
-	speed          = 5 // m/s b/w emulation steps
-	cellSize       = 10
+	hz             = time.Duration(600) // m/s b/w emulation steps
+	cellSize       = 15
 )
 
 type address uint16
 
 type chip8 struct {
+	sync.Mutex
 	reg    [16]byte // registers, reg[15] is carry
 	stack  [stackDepth]uint16
 	keys   [16]bool                           // stores keypress state
@@ -39,21 +40,12 @@ type chip8 struct {
 func (chip *chip8) Init() {
 	chip.InitChip8Registers()
 	chip.InitCharset()
-
-	// should decrement these registers on the minute
-	timer := time.NewTicker((1000 / 16) * time.Millisecond)
-	go func() {
-		for range timer.C {
-			chip.st = Min(0, chip.st-1)
-			chip.dt = Min(0, chip.dt-1)
-		}
-	}()
 }
 
 func (chip *chip8) InitChip8Registers() {
 	// note that reg defaults elems to 0x00
-	chip.dt = 0x00
-	chip.st = 0x00
+	chip.dt = 0x0
+	chip.st = 0x0
 	chip.pc = programOffset // program execution starts here by convention
 }
 
@@ -63,7 +55,6 @@ func (chip *chip8) LoadProgram(path string) {
 		panic(progBuff)
 	}
 
-	fmt.Println(len(progBuff))
 	// load the mem in at offset
 	for i := 0; i < len(progBuff); i++ {
 		chip.mem[programOffset+i] = progBuff[i]

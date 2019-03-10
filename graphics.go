@@ -7,7 +7,7 @@ import (
 // InitSdlWindow generates window at correct aspect ratio
 func InitSdlWindow() (*sdl.Window, error) {
 	if err := sdl.Init(sdl.INIT_EVERYTHING); err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	window, err := sdl.CreateWindow(
@@ -28,10 +28,12 @@ func InitSdlWindow() (*sdl.Window, error) {
 // RenderChip8 takes an SDL window and chip8 state, and renders
 func RenderChip8(window *sdl.Window, chip *chip8) {
 
+	chip.Lock()
 	const (
 		colorEmpty    = 0x000000
 		colorOccupied = 0xFFFFFF
-		cellSize      = 10
+		colorBorder   = 0xD3D3D3
+		margin        = 1
 	)
 
 	surface, _ := window.GetSurface()
@@ -41,13 +43,28 @@ func RenderChip8(window *sdl.Window, chip *chip8) {
 			x := int32((ind % displayColumns) * cellSize)
 			y := int32(i * cellSize)
 			if chip.disp[ind] == 0x0 {
-				surface.FillRect(&sdl.Rect{X: x, Y: y, W: cellSize, H: cellSize}, colorEmpty)
+				surface.FillRect(&sdl.Rect{X: x, Y: y, W: cellSize, H: cellSize}, colorBorder)
+				surface.FillRect(&sdl.Rect{X: x + margin, Y: y + margin, W: cellSize - margin, H: cellSize - margin}, colorEmpty)
 			} else {
-				surface.FillRect(&sdl.Rect{X: x, Y: y, W: cellSize, H: cellSize}, colorOccupied)
+				surface.FillRect(&sdl.Rect{X: x, Y: y, W: cellSize, H: cellSize}, colorBorder)
+				surface.FillRect(&sdl.Rect{X: x + margin, Y: y + margin, W: cellSize - margin, H: cellSize - margin}, colorOccupied)
 			}
 		}
 	}
 
+	chip.Unlock()
 	window.UpdateSurface()
 
+}
+
+func (chip *chip8) SetPixel(x, y uint16) {
+	ind := x + y*displayColumns
+	chip.disp[ind] = chip.disp[ind] ^ 1
+	return
+
+}
+
+func (chip *chip8) IsPixelSet(x, y uint16) bool {
+	ind := x + y*displayColumns
+	return chip.disp[ind] == 0x1
 }

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"math/rand"
 	"time"
 )
@@ -28,11 +27,11 @@ func (chip *chip8) EmulateDecodedInstruction(op uint16) {
 				chip.disp[i] = 0x00
 			}
 
+			chip.render <- true
+
 		case 0xEE: // RET
 			chip.SetPC(chip.stack[chip.sp])
 			chip.sp--
-			retflag = false
-
 		}
 
 	case 0x1000: // SET PC
@@ -41,7 +40,7 @@ func (chip *chip8) EmulateDecodedInstruction(op uint16) {
 
 	case 0x2000: // CALL --> 2NNN
 		chip.sp++
-		chip.stack[chip.sp] = chip.pc + 2 // must return past the last instruction
+		chip.stack[chip.sp] = chip.pc // must return past the last instruction
 		chip.SetPC(op & 0x0FFF)
 		retflag = false
 
@@ -73,8 +72,8 @@ func (chip *chip8) EmulateDecodedInstruction(op uint16) {
 
 	case 0x7000: // ADD Vx, byte --> 7xKK
 		targetReg := uint8((op >> 8) & 0x000F)
-		val := uint8(op & 0x00FF)
-		sum := chip.ReadRegister(targetReg) + val
+		kk := uint8(op & 0x00FF)
+		sum := chip.ReadRegister(targetReg) + kk
 		chip.SetRegister(targetReg, sum)
 
 	case 0x8000: // these take form 8xyZ
@@ -99,25 +98,25 @@ func (chip *chip8) EmulateDecodedInstruction(op uint16) {
 
 		case 0x4: // ADD Vx, Vy
 			sum := uint16(rxval) + uint16(ryval)
-			trimmedSum := uint8(sum & 0xFF)
+			trimmedSum := byte(sum)
 			chip.SetRegister(rx, trimmedSum)
-			chip.setRegisterOnCondition(15, sum >= 256)
+			chip.setRegisterOnCondition(0xf, sum > 255)
 
 		case 0x5: // SUB Vx, Vy
-			chip.setRegisterOnCondition(15, rxval > ryval)
+			chip.setRegisterOnCondition(0xf, rxval > ryval)
 			chip.SetRegister(rx, rxval-ryval)
 
 		case 0x6: // SHR Vx {, Vy}
-			chip.setRegisterOnCondition(15, rxval&0x1 == 0x1)
-			chip.SetRegister(rx, rxval>>2)
+			chip.setRegisterOnCondition(0xf, rxval&0x1 == 0x1)
+			chip.SetRegister(rx, rxval/2)
 
 		case 0x7: // SUBN Vx, Vy
-			chip.setRegisterOnCondition(15, ryval > rxval)
-			chip.SetRegister(rx, rxval-ryval)
+			chip.setRegisterOnCondition(0xf, ryval > rxval)
+			chip.SetRegister(rx, ryval-rxval)
 
 		case 0xE: // SHL Vx {, Vy}
-			chip.setRegisterOnCondition(15, (rxval>>7)&0x1 == 0x1)
-			chip.SetRegister(rx, rxval/2)
+			chip.setRegisterOnCondition(0xf, (rxval>>7)&0x1 == 0x1)
+			chip.SetRegister(rx, rxval*2)
 		}
 
 	case 0x9000: // SNE Vx, Vy --> 9xy0
@@ -132,7 +131,7 @@ func (chip *chip8) EmulateDecodedInstruction(op uint16) {
 
 	case 0xB000: // JP V0, addr --> BNNN
 		baseAddr := op & 0x0FFF
-		valV0 := chip.ReadRegister(0)
+		valV0 := chip.ReadRegister(0x0)
 		chip.SetPC(baseAddr + uint16(valV0)) // can we make this conversion?
 		retflag = false                      // noinc
 
@@ -149,19 +148,21 @@ func (chip *chip8) EmulateDecodedInstruction(op uint16) {
 		n := uint16(op & 0x000F)
 
 		var b byte
-		for i := uint16(0); i < n; i++ {
-			b = chip.mem[chip.I+uint16(i)]
-			for j := uint16(0); j < 8; j++ {
-				v := ((b << j) >> 7) & 0x1 // examine leftmost bits first, move rigthward
-				rowInd := (ryval + i) % displayRows
-				colInd := (rxval + j) % displayColumns
-				ind := rowInd*displayColumns + colInd
+		chip.SetRegister(0xf, 0x0)
+		for yline := uint16(0); yline < n; yline++ {
+			b = chip.mem[chip.I+uint16(yline)]
+			for xline := uint16(0); xline < 8; xline++ {
 
-				// if pixel was deactivated, set flag
-				if chip.disp[ind] == 0x01 && v == 0x01 {
-					chip.SetRegister(15, 1)
+				xWrapped := (xline + rxval) % displayColumns
+				yWrapped := (yline + ryval) % displayRows
+
+				if b&(0x80>>xline) != 0 {
+					if chip.IsPixelSet(xWrapped, yWrapped) {
+						chip.SetRegister(0xf, 0x1)
+					}
+					chip.SetPixel(xWrapped, yWrapped)
 				}
-				chip.disp[ind] ^= v
+
 			}
 		}
 
@@ -195,10 +196,8 @@ func (chip *chip8) EmulateDecodedInstruction(op uint16) {
 		case 0x0A: // LD Vx, K --> FX0A
 			// there should be input channel that some keypress handler writes to,
 			// and this should wait on that channel, for now scanf
-			fmt.Println("Waitingggggggggg")
 			event := <-chip.input
 			value := SdlKeyToValue(event.Keysym.Sym)
-			fmt.Printf("done waiting with value %d", value)
 			chip.SetRegister(targetReg, value)
 
 		case 0x15: // LD DT, Vx --> FX15
@@ -212,22 +211,22 @@ func (chip *chip8) EmulateDecodedInstruction(op uint16) {
 
 		case 0x29:
 			hexDigToPointTo := chip.ReadRegister(targetReg)
-			chip.I = uint16(hexDigToPointTo * 5)
+			chip.I = uint16(hexDigToPointTo) * 0x5
 
 		case 0x33: // LD B, Vx --> FX33 (BCD into I, I+1, I+2)
 			val := uint8(chip.ReadRegister(targetReg))
-			chip.mem[chip.I] = byte((val / 100) % 10)
+			chip.mem[chip.I] = byte(val / 100)
 			chip.mem[chip.I+1] = byte((val / 10) % 10)
 			chip.mem[chip.I+2] = byte(val % 10)
 
 		case 0x55: // LD [I], Vx
-			for i := 0; i < int(targetReg); i++ {
-				chip.mem[int(chip.I)+i] = chip.ReadRegister(uint8(i))
+			for i := 0; i <= int(targetReg); i++ {
+				chip.mem[int(chip.I)+i] = chip.ReadRegister(byte(i))
 			}
 
 		case 0x65: // LD Vx, [I]
-			for i := 0; i < int(targetReg); i++ {
-				chip.SetRegister(targetReg, chip.mem[int(chip.I)+i])
+			for i := 0; i <= int(targetReg); i++ {
+				chip.SetRegister(uint8(i), chip.mem[int(chip.I)+i])
 			}
 
 		}
@@ -237,6 +236,15 @@ func (chip *chip8) EmulateDecodedInstruction(op uint16) {
 	// increment program counter if needed, and decrement
 	if retflag {
 		chip.IncrementPC()
+	}
+
+	// update timers
+	if chip.st > 0 {
+		chip.st = chip.st - 1
+	}
+
+	if chip.dt > 0 {
+		chip.dt = chip.dt - 1
 	}
 
 }
@@ -255,9 +263,9 @@ func (chip *chip8) setRegisterOnCondition(reg uint8, predicate bool) {
 	}
 }
 
-// Min provides basic byte min
-func Min(a, b byte) byte {
-	if a < b {
+// Max provides basic byte min
+func Max(a, b byte) byte {
+	if a > b {
 		return a
 	}
 	return b

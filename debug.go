@@ -30,14 +30,18 @@ func (chip *chip8) HandleDebugInput(input string) {
 		for i := 0; i < count; i++ {
 			chip.printChipState()
 		}
+
 	default:
-		op, err := decodeTextOpcode(input)
+		address, err := decodeTextOpcode(input)
 		if err != nil {
 			fmt.Println("Error: invalid debug input command")
 			return
 		}
 
-		chip.EmulateDecodedInstruction(op)
+		for chip.pc != address {
+			fmt.Printf("Skipping op at: %x\n", chip.pc)
+			chip.EmulateNext()
+		}
 	}
 }
 
@@ -61,8 +65,8 @@ func (chip *chip8) printChipState() {
 
 	color.Green(fmt.Sprintf("PC: "+fmt16Bit, chip.pc, chip.pc, chip.pc))
 	color.Green(fmt.Sprintf("SP: "+fmt16Bit, chip.sp, chip.sp, chip.sp))
-	color.Green(fmt.Sprintf("DT: "+fmt16Bit, chip.dt, chip.dt, chip.dt))
-	color.Green(fmt.Sprintf("ST: "+fmt16Bit, chip.st, chip.st, chip.st))
+	color.Green(fmt.Sprintf("DT: "+fmt8Bit, chip.dt, chip.dt, chip.dt))
+	color.Green(fmt.Sprintf("ST: "+fmt8Bit, chip.st, chip.st, chip.st))
 	color.Green(fmt.Sprintf(" I: "+fmt16Bit, chip.I, chip.I, chip.I))
 	fmt.Println()
 

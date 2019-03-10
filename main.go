@@ -53,6 +53,7 @@ func mainLoop(window *sdl.Window, chip *chip8) {
 	}
 	surface.FillRect(nil, 0)
 
+	// chip writes to render channel to trigger a draw
 	go func() {
 		for {
 			<-render
@@ -60,10 +61,12 @@ func mainLoop(window *sdl.Window, chip *chip8) {
 		}
 	}()
 
+	// emulation loop, unclear if this timing should be in the chip itself
+	// rather than above it in the main loop (timer could be passed into chip?)
 	go func() {
 		for {
 			chip.EmulateNext()
-			time.Sleep(time.Millisecond * speed)
+			time.Sleep(time.Second / hz)
 		}
 	}()
 
@@ -72,7 +75,6 @@ func mainLoop(window *sdl.Window, chip *chip8) {
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 			switch event.(type) {
 			case *sdl.QuitEvent:
-				println("Quit")
 				running = false
 				break
 			case *sdl.KeyboardEvent:
@@ -87,7 +89,9 @@ func mainLoop(window *sdl.Window, chip *chip8) {
 func debugLoop(window *sdl.Window, chip *chip8) {
 
 	input := make(chan sdl.KeyboardEvent)
+	render := make(chan bool)
 	chip.input = input
+	chip.render = render
 
 	done := make(chan bool) // should not be here
 	go RunInputHandler(chip, input, done)
@@ -98,6 +102,12 @@ func debugLoop(window *sdl.Window, chip *chip8) {
 	}
 	surface.FillRect(nil, 0)
 
+	go func() {
+		for {
+			<-render
+			RenderChip8(window, chip)
+		}
+	}()
 	scanner := bufio.NewScanner(os.Stdin)
 	go func() {
 		for {
@@ -114,7 +124,6 @@ func debugLoop(window *sdl.Window, chip *chip8) {
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 			switch event.(type) {
 			case *sdl.QuitEvent:
-				fmt.Println("Quit")
 				running = false
 				break
 			case *sdl.KeyboardEvent:

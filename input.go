@@ -12,7 +12,7 @@ func RunInputHandler(chip *chip8, key <-chan sdl.KeyboardEvent, done <-chan bool
 			sdlKeyEvent := <-key
 			val := SdlKeyToValue(sdlKeyEvent.Keysym.Sym)
 
-			if sdlKeyEvent.Type == sdl.KEYDOWN { // this is not mapped right in lib...
+			if sdlKeyEvent.Type == sdl.KEYDOWN {
 				chip.keys[val] = true
 			} else if sdlKeyEvent.Type == sdl.KEYUP {
 				chip.keys[val] = false
