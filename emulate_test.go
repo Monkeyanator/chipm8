@@ -7,11 +7,14 @@ import (
 func generateMockChip8() *chip8 {
 	chip := &chip8{}
 	chip.InitChip8Registers()
+	render := make(chan bool, 1) // unbuffered channels block, for tests use a size 1 bufer
+	chip.render = render
 	return chip
 }
 
 func TestCLS(t *testing.T) {
 	chip := generateMockChip8()
+
 	chip.disp[0] = 0xF1
 	chip.disp[1] = 0x5A
 	chip.disp[1023] = 0xFF
@@ -29,7 +32,7 @@ func TestCLS(t *testing.T) {
 func TestRet(t *testing.T) {
 
 	chip := generateMockChip8()
-	chip.pc = 0x5
+	chip.pc = 0x8
 	chip.sp = 2
 	chip.stack[0] = 0x1
 	chip.stack[1] = 0x2
@@ -37,7 +40,7 @@ func TestRet(t *testing.T) {
 
 	chip.EmulateDecodedInstruction(0x00EE)
 
-	if chip.pc != 0x3 {
+	if chip.pc != 0x5 {
 		t.Errorf("Test Failed: expected program counter to update, found value 0x%x", chip.pc)
 		return
 	}
@@ -70,10 +73,9 @@ func TestSetPC(t *testing.T) {
 
 func TestCall(t *testing.T) {
 	type setup struct {
-		stack  []uint16
-		sp     uint8
-		opcode uint16
-		pc     uint16
+		stack []uint16
+		sp    uint8
+		pc    uint16
 	}
 
 	type result struct {
@@ -86,7 +88,7 @@ func TestCall(t *testing.T) {
 		setup setup
 		res   result
 	}{
-		{setup{[]uint16{0x1, 0x2, 0x3}, 2, 0x200F, 0x200}, result{3, 0x00F, 0x202}},
+		{setup{[]uint16{0x1, 0x2, 0x3}, 2, 0x200}, result{3, 0x00F, 0x200}},
 	}
 
 	for _, test := range tests {
@@ -96,7 +98,7 @@ func TestCall(t *testing.T) {
 		for i, s := range test.setup.stack {
 			chip.stack[i] = s
 		}
-		chip.EmulateDecodedInstruction(test.setup.opcode)
+		chip.EmulateDecodedInstruction(0x200F)
 
 		if chip.pc != test.res.pc {
 			t.Errorf("Expected program counter to update to 0x%x, got 0x%x", test.res.pc, chip.pc)
