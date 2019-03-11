@@ -6,19 +6,16 @@ import (
 
 // RunInputHandler receives input messages from SDL and pushes the result into chip
 func RunInputHandler(chip *chip8, key <-chan sdl.KeyboardEvent) {
+	for {
+		sdlKeyEvent := <-key
+		val := SdlKeyToValue(sdlKeyEvent.Keysym.Sym)
 
-	go func() {
-		for {
-			sdlKeyEvent := <-key
-			val := SdlKeyToValue(sdlKeyEvent.Keysym.Sym)
-
-			if sdlKeyEvent.Type == sdl.KEYDOWN {
-				chip.keys[val] = true
-			} else if sdlKeyEvent.Type == sdl.KEYUP {
-				chip.keys[val] = false
-			}
+		if sdlKeyEvent.Type == sdl.KEYDOWN {
+			chip.keys[val] = true
+		} else if sdlKeyEvent.Type == sdl.KEYUP {
+			chip.keys[val] = false
 		}
-	}()
+	}
 
 }
 
