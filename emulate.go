@@ -240,7 +240,10 @@ func (chip *chip8) EmulateDecodedInstruction(op uint16) {
 
 	// update timers
 	if chip.st > 0 {
+		chip.sound <- true
 		chip.st = chip.st - 1
+	} else {
+		chip.sound <- false
 	}
 
 	if chip.dt > 0 {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 
@@ -34,7 +35,7 @@ func (chip *chip8) HandleDebugInput(input string) {
 	default:
 		address, err := decodeTextOpcode(input)
 		if err != nil {
-			fmt.Println("Error: invalid debug input command")
+			log.Println("Error: invalid debug input command")
 			return
 		}
 

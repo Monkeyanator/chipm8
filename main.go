@@ -40,12 +40,14 @@ func main() {
 func mainLoop(window *sdl.Window, chip *chip8) {
 
 	input := make(chan sdl.KeyboardEvent)
+	sound := make(chan bool)
 	render := make(chan bool)
 	chip.input = input
 	chip.render = render
+	chip.sound = sound
 
-	done := make(chan bool) // should not be here
-	go RunInputHandler(chip, input, done)
+	go RunInputHandler(chip, input)
+	go RunAudioHandler(sound)
 
 	surface, err := window.GetSurface()
 	if err != nil {
@@ -90,11 +92,12 @@ func debugLoop(window *sdl.Window, chip *chip8) {
 
 	input := make(chan sdl.KeyboardEvent)
 	render := make(chan bool)
+	sound := make(chan bool)
 	chip.input = input
 	chip.render = render
+	chip.sound = sound
 
-	done := make(chan bool) // should not be here
-	go RunInputHandler(chip, input, done)
+	go RunInputHandler(chip, input)
 
 	surface, err := window.GetSurface()
 	if err != nil {

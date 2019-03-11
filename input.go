@@ -5,7 +5,7 @@ import (
 )
 
 // RunInputHandler receives input messages from SDL and pushes the result into chip
-func RunInputHandler(chip *chip8, key <-chan sdl.KeyboardEvent, done <-chan bool) {
+func RunInputHandler(chip *chip8, key <-chan sdl.KeyboardEvent) {
 
 	go func() {
 		for {
@@ -20,7 +20,6 @@ func RunInputHandler(chip *chip8, key <-chan sdl.KeyboardEvent, done <-chan bool
 		}
 	}()
 
-	<-done
 }
 
 // SdlKeyToValue takes an SDL virtual keycode and maps to the hex

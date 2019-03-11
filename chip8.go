@@ -35,6 +35,7 @@ type chip8 struct {
 	disp   [displayRows * displayColumns]byte // graphics mem
 	input  chan sdl.KeyboardEvent
 	render chan bool
+	sound  chan bool
 }
 
 func (chip *chip8) Init() {
