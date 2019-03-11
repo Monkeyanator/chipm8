@@ -6,33 +6,9 @@ import "C"
 import (
 	"io/ioutil"
 	"log"
-	"math"
-	"reflect"
-	"unsafe"
 
 	"github.com/veandco/go-sdl2/mix"
 )
-
-const (
-	toneHz   = 440
-	sampleHz = 2400
-	dPhase   = 2 * math.Pi * toneHz / sampleHz
-)
-
-//export SineWave
-func SineWave(userdata unsafe.Pointer, stream *C.Uint8, length C.int) {
-	n := int(length)
-	hdr := reflect.SliceHeader{Data: uintptr(unsafe.Pointer(stream)), Len: n, Cap: n}
-	buf := *(*[]C.Uint8)(unsafe.Pointer(&hdr))
-
-	var phase float64
-	for i := 0; i < n; i += 2 {
-		phase += dPhase
-		sample := C.Uint8((math.Sin(phase) + 0.999999) * 128)
-		buf[i] = sample
-		buf[i+1] = sample
-	}
-}
 
 // RunAudioHandler takes a bool channel, which turns audio on and off
 func RunAudioHandler(audio <-chan bool) {
