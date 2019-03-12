@@ -98,6 +98,7 @@ func debugLoop(window *sdl.Window, chip *chip8) {
 	chip.sound = sound
 
 	go RunInputHandler(chip, input)
+	go RunAudioHandler(sound)
 
 	surface, err := window.GetSurface()
 	if err != nil {
