@@ -20,8 +20,20 @@ go get -u github.com/Monkeyanator/chipm8
 
 ## Usage example
 
+To run a ROM, pass the path into `chipm8` through the `--prog` flag:
 ```sh
 chipm8 --prog=roms/tetris.ch8
+```
+or, to run the Tetris ROM in debug mode:
+
+```sh
+chipm8 --prog=roms/tetris.ch8 --debug
+```
+
+Full list of command-line flags can be found with:
+
+```sh
+chipm8 --help
 ```
 
 ## Contributing
