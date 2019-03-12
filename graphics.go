@@ -11,7 +11,7 @@ func InitSdlWindow() (*sdl.Window, error) {
 	}
 
 	window, err := sdl.CreateWindow(
-		"Chip8",
+		"chipm8",
 		sdl.WINDOWPOS_UNDEFINED,
 		sdl.WINDOWPOS_UNDEFINED,
 		displayColumns*cellSize,
