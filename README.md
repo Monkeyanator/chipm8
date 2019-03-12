@@ -17,6 +17,11 @@ OS X & Linux:
 go get -u github.com/Monkeyanator/chipm8
 ```
 
+In addition, this project uses [dep](https://github.com/golang/dep) for dependency management, so to fetch the needed dependencies, run:
+
+```sh
+dep ensure
+```
 
 ## Usage example
 
