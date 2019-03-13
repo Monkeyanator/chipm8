@@ -25,7 +25,6 @@ func TestCLS(t *testing.T) {
 	for i := 0; i < len(chip.disp); i++ {
 		if chip.disp[i] != 0x0 {
 			t.Error("Test Failed: expected 0x00E0 instruction to clear disp bits, but did not")
-			return
 		}
 	}
 
@@ -44,12 +43,10 @@ func TestRet(t *testing.T) {
 
 	if chip.pc != 0x5 {
 		t.Errorf("Test Failed: expected program counter to update, found value 0x%x", chip.pc)
-		return
 	}
 
 	if chip.sp != 1 {
 		t.Errorf("Test Failed: expected stack pointer to decrement, found 0x%x", chip.sp)
-		return
 	}
 }
 
@@ -68,7 +65,6 @@ func TestSetPC(t *testing.T) {
 		chip.EmulateDecodedInstruction(test.opcode)
 		if chip.pc != test.result {
 			t.Errorf("Test Failed: expected program counter to update to 0x%x, found instead 0x%x", test.result, chip.pc)
-			return
 		}
 	}
 }
@@ -104,7 +100,6 @@ func TestCall(t *testing.T) {
 
 		if chip.pc != test.res.pc {
 			t.Errorf("Expected program counter to update to 0x%x, got 0x%x", test.res.pc, chip.pc)
-			return
 		}
 
 		if chip.sp != test.res.sp {
@@ -114,7 +109,6 @@ func TestCall(t *testing.T) {
 		actualStackTop := chip.stack[chip.sp]
 		if actualStackTop != test.res.stackTop {
 			t.Errorf("Expected address at top of stack to be 0x%x, got 0x%x", test.res.stackTop, chip.stack[chip.sp])
-			return
 		}
 
 	}

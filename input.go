@@ -9,6 +9,9 @@ func RunInputHandler(chip *chip8, key <-chan sdl.KeyboardEvent) {
 	for {
 		sdlKeyEvent := <-key
 		val := SdlKeyToValue(sdlKeyEvent.Keysym.Sym)
+		if val == 0xFF { // means that we found no match for that keycode
+			continue
+		}
 
 		if sdlKeyEvent.Type == sdl.KEYDOWN {
 			chip.keys[val] = true
@@ -40,5 +43,10 @@ func SdlKeyToValue(key sdl.Keycode) uint8 {
 		sdl.K_v: 0xF,
 	}
 
-	return keyToValueMapping[key]
+	val, found := keyToValueMapping[key]
+	if !found {
+		return 0xFF
+	}
+
+	return val
 }
