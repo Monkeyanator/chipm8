@@ -6,6 +6,8 @@ go:
 before_install:
   # SDL bindings
   - sudo apt-get update
+  - sudo apt-get install libegl1-mesa-dev
+  - sudo apt-get install libgles2-mesa-dev
   - sudo apt-get install libsdl2{,-image,-mixer,-ttf,-gfx}-dev
 
   # Grab dep
