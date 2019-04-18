@@ -53,7 +53,7 @@ func TestRet(t *testing.T) {
 func TestSetPC(t *testing.T) {
 	var tests = []struct {
 		opcode uint16
-		result uint16
+		result address
 	}{
 		{0x1015, 0x015},
 		{0x1000, 0x000},
@@ -71,22 +71,22 @@ func TestSetPC(t *testing.T) {
 
 func TestCall(t *testing.T) {
 	type setup struct {
-		stack []uint16
+		stack []address
 		sp    uint8
-		pc    uint16
+		pc    address
 	}
 
 	type result struct {
 		sp       uint8
-		pc       uint16
-		stackTop uint16
+		pc       address
+		stackTop address
 	}
 
 	var tests = []struct {
 		setup setup
 		res   result
 	}{
-		{setup{[]uint16{0x1, 0x2, 0x3}, 2, 0x200}, result{3, 0x00F, 0x200}},
+		{setup{[]address{0x1, 0x2, 0x3}, 2, 0x200}, result{3, 0x00F, 0x200}},
 	}
 
 	for _, test := range tests {
