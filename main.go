@@ -80,7 +80,6 @@ func mainLoop(window *sdl.Window, chip *chip8) {
 				running = false
 				break
 			case *sdl.KeyboardEvent:
-				// keyinput <- event.(*sdl.KeyboardEvent)
 				input <- *event.(*sdl.KeyboardEvent)
 			}
 		}

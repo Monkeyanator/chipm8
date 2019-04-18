@@ -27,7 +27,7 @@ func (chip *chip8) EmulateDecodedInstruction(op uint16) {
 				chip.disp[i] = 0x00
 			}
 
-			chip.render <- true
+			chip.render <- true // seems wrong
 
 		case 0xEE: // RET
 			chip.SetPC(chip.stack[chip.sp])
@@ -35,13 +35,13 @@ func (chip *chip8) EmulateDecodedInstruction(op uint16) {
 		}
 
 	case 0x1000: // SET PC
-		chip.SetPC(op & 0x0FFF)
+		chip.SetPC(address(op & 0x0FFF))
 		retflag = false
 
 	case 0x2000: // CALL --> 2NNN
 		chip.sp++
 		chip.stack[chip.sp] = chip.pc // must return past the last instruction
-		chip.SetPC(op & 0x0FFF)
+		chip.SetPC(address(op & 0x0FFF))
 		retflag = false
 
 	case 0x3000: // SE
@@ -130,10 +130,10 @@ func (chip *chip8) EmulateDecodedInstruction(op uint16) {
 		chip.I = 0x0FFF & op
 
 	case 0xB000: // JP V0, addr --> BNNN
-		baseAddr := op & 0x0FFF
+		baseAddr := address(op & 0x0FFF)
 		valV0 := chip.ReadRegister(0x0)
-		chip.SetPC(baseAddr + uint16(valV0)) // can we make this conversion?
-		retflag = false                      // noinc
+		chip.SetPC(baseAddr + address(valV0)) // can we make this conversion?
+		retflag = false                       // noinc
 
 	case 0xC000: // RND Vx, byte --> CxKK
 		targetReg := uint8((op >> 8) & 0x000F)
@@ -253,7 +253,7 @@ func (chip *chip8) EmulateDecodedInstruction(op uint16) {
 }
 
 // DecodeInstruction takes an index and decodes the contained bytes as opcode
-func (chip *chip8) DecodeInstruction(ind uint16) uint16 {
+func (chip *chip8) DecodeInstruction(ind address) uint16 {
 	decodedInstruction := (uint16(chip.mem[ind]) << 8) | uint16(chip.mem[ind+1])
 	return decodedInstruction
 }

@@ -24,15 +24,15 @@ type address uint16
 type chip8 struct {
 	sync.Mutex
 	reg    [16]byte // registers, reg[15] is carry
-	stack  [stackDepth]uint16
-	keys   [16]bool                           // stores keypress state
-	pc     uint16                             // program counter
+	stack  [stackDepth]address
+	pc     address                            // program counter
 	sp     uint8                              // stack pointer
 	dt     byte                               // delay timer
 	st     byte                               // sound timer
 	I      uint16                             // special reg, stores addresses
 	mem    [memSize]byte                      // rom and program work ram
 	disp   [displayRows * displayColumns]byte // graphics mem
+	keys   [16]bool                           // stores keypress state
 	input  chan sdl.KeyboardEvent
 	render chan bool
 	sound  chan bool
@@ -76,8 +76,8 @@ func (chip *chip8) IncrementPC() {
 	chip.pc += 2
 }
 
-func (chip *chip8) SetPC(val uint16) {
-	chip.pc = val
+func (chip *chip8) SetPC(val address) {
+	chip.pc = address(val)
 }
 
 /* helpers */

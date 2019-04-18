@@ -33,13 +33,13 @@ func (chip *chip8) HandleDebugInput(input string) {
 		}
 
 	default:
-		address, err := decodeTextOpcode(input)
+		add, err := decodeTextOpcode(input)
 		if err != nil {
 			log.Println("Error: invalid debug input command")
 			return
 		}
 
-		for chip.pc != address {
+		for chip.pc != address(add) {
 			fmt.Printf("Skipping op at: %x\n", chip.pc)
 			chip.EmulateNext()
 		}
