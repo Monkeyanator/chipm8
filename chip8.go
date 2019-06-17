@@ -36,9 +36,17 @@ type chip8 struct {
 	input  chan sdl.KeyboardEvent
 	render chan bool
 	sound  chan bool
+	tick   chan bool
 }
 
 func (chip *chip8) Init() {
+
+	// create needed channels
+	chip.input = make(chan sdl.KeyboardEvent, 32)
+	chip.sound = make(chan bool, 32)
+	chip.render = make(chan bool, 32)
+	chip.tick = make(chan bool, 32)
+
 	chip.InitChip8Registers()
 	chip.InitCharset()
 }

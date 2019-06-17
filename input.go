@@ -5,21 +5,18 @@ import (
 )
 
 // RunInputHandler receives input messages from SDL and pushes the result into chip
-func RunInputHandler(chip *chip8, key <-chan sdl.KeyboardEvent) {
-	for {
-		sdlKeyEvent := <-key
-		val := SdlKeyToValue(sdlKeyEvent.Keysym.Sym)
-		if val == 0xFF { // means that we found no match for that keycode
-			continue
-		}
+func (chip *chip8) HandleInput(event sdl.KeyboardEvent) {
 
-		if sdlKeyEvent.Type == sdl.KEYDOWN {
-			chip.keys[val] = true
-		} else if sdlKeyEvent.Type == sdl.KEYUP {
-			chip.keys[val] = false
-		}
+	val := SdlKeyToValue(event.Keysym.Sym)
+	if val == 0xFF { // means that we found no match for that keycode
+		return
 	}
 
+	if event.Type == sdl.KEYDOWN {
+		chip.keys[val] = true
+	} else if event.Type == sdl.KEYUP {
+		chip.keys[val] = false
+	}
 }
 
 // SdlKeyToValue takes an SDL virtual keycode and maps to the hex

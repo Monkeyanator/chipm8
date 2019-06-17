@@ -39,78 +39,34 @@ func main() {
 
 func mainLoop(window *sdl.Window, chip *chip8) {
 
-	input := make(chan sdl.KeyboardEvent)
-	sound := make(chan bool)
-	render := make(chan bool)
-	chip.input = input
-	chip.render = render
-	chip.sound = sound
-
-	go RunInputHandler(chip, input)
-	go RunAudioHandler(sound)
-
 	surface, err := window.GetSurface()
 	if err != nil {
 		panic(err)
 	}
 	surface.FillRect(nil, 0)
 
-	// chip writes to render channel to trigger a draw
+	// controls emulation ticks
 	go func() {
+		ticker := time.NewTicker(time.Second / hz)
 		for {
-			<-render
-			RenderChip8(window, chip)
+			<-ticker.C
+			chip.tick <- true
 		}
 	}()
 
-	// emulation loop, unclear if this timing should be in the chip itself
-	// rather than above it in the main loop (timer could be passed into chip?)
-	go func() {
-		for {
-			chip.EmulateNext()
-			time.Sleep(time.Second / hz)
-		}
-	}()
-
-	running := true
-	for running {
-		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
-			switch event.(type) {
-			case *sdl.QuitEvent:
-				running = false
-				break
-			case *sdl.KeyboardEvent:
-				input <- *event.(*sdl.KeyboardEvent)
-			}
-		}
-	}
-
+	// this handles main emulation logic
+	go chip.emulationLoop(window)
+	os.Exit(chip.SDLLoop())
 }
 
 func debugLoop(window *sdl.Window, chip *chip8) {
 
-	input := make(chan sdl.KeyboardEvent)
-	render := make(chan bool)
-	sound := make(chan bool)
-	chip.input = input
-	chip.render = render
-	chip.sound = sound
-
-	go RunInputHandler(chip, input)
-	go RunAudioHandler(sound)
-
 	surface, err := window.GetSurface()
 	if err != nil {
 		panic(err)
 	}
 	surface.FillRect(nil, 0)
 
-	go func() {
-		for {
-			<-render
-			RenderChip8(window, chip)
-		}
-	}()
 	scanner := bufio.NewScanner(os.Stdin)
 	go func() {
 		for {
@@ -122,18 +78,41 @@ func debugLoop(window *sdl.Window, chip *chip8) {
 		}
 	}()
 
+	// this handles main emulation logic
+	go chip.emulationLoop(window)
+	os.Exit(chip.SDLLoop())
+}
+
+func (chip *chip8) emulationLoop(window *sdl.Window) {
+	for {
+		select {
+		case <-chip.render:
+			RenderChip8(window, chip)
+
+		case <-chip.sound:
+			break
+
+		case input := <-chip.input:
+			chip.HandleInput(input)
+
+		case <-chip.tick:
+			chip.EmulateNext()
+		}
+	}
+}
+
+func (chip *chip8) SDLLoop() int {
+	// SDL poll loop
 	running := true
 	for running {
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 			switch event.(type) {
 			case *sdl.QuitEvent:
 				running = false
-				break
 			case *sdl.KeyboardEvent:
-				// keyinput <- event.(*sdl.KeyboardEvent)
-				input <- *event.(*sdl.KeyboardEvent)
+				chip.input <- *event.(*sdl.KeyboardEvent)
 			}
 		}
 	}
-
+	return 0
 }

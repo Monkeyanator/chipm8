@@ -11,7 +11,7 @@ import (
 )
 
 // RunAudioHandler takes a bool channel, which turns audio on and off
-func RunAudioHandler(audio <-chan bool) {
+func (chip *chip8) RunAudioHandler(audio <-chan bool) {
 
 	if err := mix.OpenAudio(44100, mix.DEFAULT_FORMAT, 2, 4096); err != nil {
 		log.Println(err)
