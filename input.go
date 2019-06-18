@@ -6,17 +6,18 @@ import (
 
 // RunInputHandler receives input messages from SDL and pushes the result into chip
 func (chip *chip8) HandleInput(event sdl.KeyboardEvent) {
-
 	val := SdlKeyToValue(event.Keysym.Sym)
 	if val == 0xFF { // means that we found no match for that keycode
 		return
 	}
 
+	chip.Lock() // protect this op
 	if event.Type == sdl.KEYDOWN {
 		chip.keys[val] = true
 	} else if event.Type == sdl.KEYUP {
 		chip.keys[val] = false
 	}
+	chip.Unlock()
 }
 
 // SdlKeyToValue takes an SDL virtual keycode and maps to the hex

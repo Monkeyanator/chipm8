@@ -10,12 +10,15 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 )
 
+var DebugMode bool
+var ProgramPath string
+var Tiled bool
+
 func main() {
 
-	var debugMode bool
-	var programPath string
-	flag.BoolVar(&debugMode, "debug", false, "Program enters into interactive debugger mode, wherein user can step through opcodes one at a time")
-	flag.StringVar(&programPath, "prog", "", "Path to the chip8 machine code to emulate")
+	flag.BoolVar(&DebugMode, "debug", false, "Program enters into interactive debugger mode, wherein user can step through opcodes one at a time")
+	flag.StringVar(&ProgramPath, "prog", "", "Path to the chip8 machine code to emulate")
+	flag.BoolVar(&Tiled, "tiled", false, "Determines whether the chip8 display will include a border around pixels")
 	flag.Parse()
 
 	window, err := InitSdlWindow()
@@ -27,9 +30,9 @@ func main() {
 
 	chip := &chip8{}
 	chip.Init()
-	chip.LoadProgram(programPath) // should return err
+	chip.LoadProgram(ProgramPath) // should return err
 
-	if debugMode {
+	if DebugMode {
 		debugLoop(window, chip)
 	} else {
 		mainLoop(window, chip)
