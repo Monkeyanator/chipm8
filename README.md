@@ -4,6 +4,10 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/Monkeyanator/chipm8)](https://goreportcard.com/report/github.com/Monkeyanator/chipm8)
 [![Go Report Card](https://travis-ci.com/Monkeyanator/chipm8.svg?branch=master)](https://travis-ci.com/Monkeyanator/chipm8)
 
+**Standard render (Space Invaders)**
+![chipm8 INVADERS](images/invaders.png)
+
+**Tiled render (Tetris)**
 ![chipm8 Tetris](https://raw.githubusercontent.com/Monkeyanator/chipm8/master/images/chipm8.png)
 
 Yet another chip8 emulator, written to learn more about emulator design before tackling a more complicated system. It comes with a stripped-down command-line debugger (think GDB with 3-4 commands).
