@@ -23,35 +23,44 @@ type address uint16
 
 type chip8 struct {
 	sync.Mutex
-	reg    [16]byte // registers, reg[15] is carry
-	stack  [stackDepth]address
-	pc     address                            // program counter
-	sp     uint8                              // stack pointer
-	dt     byte                               // delay timer
-	st     byte                               // sound timer
-	I      uint16                             // special reg, stores addresses
-	mem    [memSize]byte                      // rom and program work ram
-	disp   [displayRows * displayColumns]byte // graphics mem
-	keys   [16]bool                           // stores keypress state
-	input  chan sdl.KeyboardEvent
-	render chan bool
-	sound  chan bool
-	tick   chan bool
+	reg      [16]byte // registers, reg[15] is carry
+	stack    [stackDepth]address
+	pc       address       // program counter
+	sp       uint8         // stack pointer
+	dt       byte          // delay timer
+	st       byte          // sound timer
+	I        uint16        // special reg, stores addresses
+	mem      [memSize]byte // rom and program work ram
+	disp     []byte        // graphics mem
+	keys     [16]bool      // stores keypress state
+	graphics Graphics
+	input    chan sdl.KeyboardEvent
+	sound    chan bool
+	tick     chan bool
 }
 
-func (chip *chip8) Init() {
+// NewCHIP8 performs needed setup and binds for chip emulation
+func NewCHIP8(g Graphics) *chip8 {
+	chip := &chip8{
+		graphics: g,
+	}
+	chip.initRegisters()
 
-	// create needed channels
+	// TODO(Monkeyanator) replace some of these with standard calls
 	chip.input = make(chan sdl.KeyboardEvent, 32)
 	chip.sound = make(chan bool, 32)
-	chip.render = make(chan bool, 32)
 	chip.tick = make(chan bool, 32)
 
-	chip.InitChip8Registers()
+	// bind graphics buffer
+	chip.disp = make([]byte, displayRows*displayColumns)
+	chip.graphics.BindBuffer(chip.disp)
+
+	// initialize remaining systems
 	chip.InitCharset()
+	return chip
 }
 
-func (chip *chip8) InitChip8Registers() {
+func (chip *chip8) initRegisters() {
 	// note that reg defaults elems to 0x00
 	chip.dt = 0x0
 	chip.st = 0x0

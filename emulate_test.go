@@ -4,13 +4,17 @@ import (
 	"testing"
 )
 
+type mockGraphics struct{}
+
+func (m *mockGraphics) Render() {
+	return
+}
+func (m *mockGraphics) BindBuffer([]byte) {
+	return
+}
+
 func generateMockChip8() *chip8 {
-	chip := &chip8{}
-	chip.InitChip8Registers()
-	render := make(chan bool, 1) // unbuffered channels block, for tests use a size 1 bufer
-	sound := make(chan bool, 1)
-	chip.render = render
-	chip.sound = sound
+	chip := NewCHIP8(&mockGraphics{})
 	return chip
 }
 

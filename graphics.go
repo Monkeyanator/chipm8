@@ -11,8 +11,46 @@ const (
 	margin        = 1
 )
 
-// InitSdlWindow generates window at correct aspect ratio
-func InitSdlWindow() (*sdl.Window, error) {
+// Graphics should be used to conduct screen draws
+type Graphics interface {
+	Render()
+	BindBuffer([]byte)
+}
+
+type graphics struct {
+	window *sdl.Window
+	buffer []byte
+}
+
+// NewGraphics takes an SDL window and a reference to vidmem
+// and renders the screen buffer onto the window through the Render() interface
+func NewGraphics(window *sdl.Window) Graphics {
+	return &graphics{
+		window: window,
+	}
+}
+
+// Render draws screen buffer onto SDL window
+func (g *graphics) Render() {
+	for i := 0; i < displayRows; i++ {
+		for j := 0; j < displayColumns; j++ {
+			ind := displayColumns*i + j
+			x := int32((ind % displayColumns) * cellSize)
+			y := int32(i * cellSize)
+			empty := g.buffer[ind] == 0x0
+			renderTile(g.window, x, y, empty, Tiled)
+		}
+	}
+	g.window.UpdateSurface()
+}
+
+// BindBuffer takes a slice to bind as vidmem to this Graphics renderer
+func (g *graphics) BindBuffer(buf []byte) {
+	g.buffer = buf
+}
+
+// initSDLWindow generates window at correct aspect ratio
+func initSDLWindow() (*sdl.Window, error) {
 	if err := sdl.Init(sdl.INIT_EVERYTHING); err != nil {
 		return nil, err
 	}
@@ -30,38 +68,6 @@ func InitSdlWindow() (*sdl.Window, error) {
 	}
 
 	return window, nil
-}
-
-// RenderChip8 takes an SDL window and chip8 state, and renders
-func RenderChip8(window *sdl.Window, chip *chip8) {
-
-	chip.Lock()
-
-	for i := 0; i < displayRows; i++ {
-		for j := 0; j < displayColumns; j++ {
-			ind := displayColumns*i + j
-			x := int32((ind % displayColumns) * cellSize)
-			y := int32(i * cellSize)
-			empty := chip.disp[ind] == 0x0
-			renderTile(window, x, y, empty, Tiled)
-		}
-	}
-
-	chip.Unlock()
-	window.UpdateSurface()
-
-}
-
-func (chip *chip8) SetPixel(x, y uint16) {
-	ind := x + y*displayColumns
-	chip.disp[ind] = chip.disp[ind] ^ 1
-	return
-
-}
-
-func (chip *chip8) IsPixelSet(x, y uint16) bool {
-	ind := x + y*displayColumns
-	return chip.disp[ind] == 0x1
 }
 
 func renderTile(window *sdl.Window, x, y int32, empty, tiled bool) {

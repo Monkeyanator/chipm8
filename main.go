@@ -21,15 +21,15 @@ func main() {
 	flag.BoolVar(&Tiled, "tiled", false, "Determines whether the chip8 display will include a border around pixels")
 	flag.Parse()
 
-	window, err := InitSdlWindow()
+	window, err := initSDLWindow()
 	if err != nil {
 		panic(err)
 	}
 	defer window.Destroy()
 	defer sdl.Quit()
 
-	chip := &chip8{}
-	chip.Init()
+	graphics := NewGraphics(window)
+	chip := NewCHIP8(graphics)
 	chip.LoadProgram(ProgramPath) // should return err
 
 	if DebugMode {
@@ -77,7 +77,7 @@ func debugLoop(window *sdl.Window, chip *chip8) {
 			scanner.Scan()
 			input := scanner.Text()
 			chip.HandleDebugInput(input)
-			RenderChip8(window, chip)
+			chip.graphics.Render()
 		}
 	}()
 
@@ -89,9 +89,6 @@ func debugLoop(window *sdl.Window, chip *chip8) {
 func (chip *chip8) emulationLoop(window *sdl.Window) {
 	for {
 		select {
-		case <-chip.render:
-			RenderChip8(window, chip)
-
 		case <-chip.sound:
 			break
 

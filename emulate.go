@@ -26,8 +26,7 @@ func (chip *chip8) EmulateDecodedInstruction(op uint16) {
 			for i := 0; i < len(chip.disp); i++ {
 				chip.disp[i] = 0x00
 			}
-
-			chip.render <- true // seems wrong
+			chip.graphics.Render()
 
 		case 0xEE: // RET
 			chip.SetPC(chip.stack[chip.sp])
@@ -157,16 +156,15 @@ func (chip *chip8) EmulateDecodedInstruction(op uint16) {
 				yWrapped := (yline + ryval) % displayRows
 
 				if b&(0x80>>xline) != 0 {
-					if chip.IsPixelSet(xWrapped, yWrapped) {
+					if chip.isPixelSet(xWrapped, yWrapped) {
 						chip.SetRegister(0xf, 0x1)
 					}
-					chip.SetPixel(xWrapped, yWrapped)
+					chip.setPixel(xWrapped, yWrapped)
 				}
 
 			}
 		}
-
-		chip.render <- true
+		chip.graphics.Render()
 
 	case 0xE000: // SKP Vx --> Ex9E
 		targetReg := uint8((op >> 8) & 0x000F)
@@ -264,6 +262,18 @@ func (chip *chip8) setRegisterOnCondition(reg uint8, predicate bool) {
 	} else {
 		chip.SetRegister(reg, 0)
 	}
+}
+
+func (chip *chip8) setPixel(x, y uint16) {
+	ind := x + y*displayColumns
+	chip.disp[ind] = chip.disp[ind] ^ 1
+	return
+
+}
+
+func (chip *chip8) isPixelSet(x, y uint16) bool {
+	ind := x + y*displayColumns
+	return chip.disp[ind] == 0x1
 }
 
 // Max provides basic byte min
